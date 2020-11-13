@@ -22,7 +22,7 @@ Crosshair::~Crosshair()
 
 void Crosshair::move(float deltaTime, bool isClockwise)
 {
-    deltaTime *= 250000;
+    deltaTime *= 70000 * speed;
     if (isClockwise)
     {
         if (crosshairVector.x >= 0 && crosshairVector.y < 0)
@@ -72,9 +72,21 @@ void Crosshair::move(float deltaTime, bool isClockwise)
 
     }
     if (_isnan(crosshairVector.y))
+    {
         crosshairVector.y = 0;
+        if (crosshairVector.x > 0)
+            crosshairVector.x = RADIUS;
+        else
+            crosshairVector.x = -RADIUS;
+    }
     if (_isnan(crosshairVector.x))
+    {
         crosshairVector.x = 0;
+        if (crosshairVector.y > 0)
+            crosshairVector.y = RADIUS;
+        else
+            crosshairVector.y = -RADIUS;
+    }
 }
 
 void Crosshair::draw(sf::RenderWindow& window, sf::Vector2f center)
@@ -97,6 +109,13 @@ void Crosshair::reverseCrosshair()
     crosshairVector.x = -crosshairVector.x;
 }
 
-sf::Vector2f Crosshair::getCrosshairVectorForShooting() {
-    return sf::Vector2(crosshairVector.x / 100.f, crosshairVector.y / 100.f);
+void Crosshair::increaseSpeed()
+{
+    if (speed < 16)
+    speed *= 2.f;
+}
+
+void Crosshair::clearSpeed()
+{
+    speed = 1.f;
 }

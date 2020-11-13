@@ -4,16 +4,14 @@
 
 #include "Player.h"
 
-Player::Player(sf::Color color, const int weaponCount[WEAPONS_COUNT])
+Player::Player(sf::Color color, const int weaponCount[WEAPONS_COUNT],sf::Font* font)
 {
     this->color = color;
-    for(auto & unit : units)
+    for(int i = 0; i < UNIT_COUNTER; i++)
     {
-        unit = new Unit("tux_from_linux.png", sf::Vector2f (100, 150), 3.f,
-                        sf::Vector2u(3,9), 0.25, 100); //
+        units[i] = new Unit("tux_from_linux.png", sf::Vector2f (100, 150), 1.5f,
+                        sf::Vector2u(3,9), 0.25, 100, font, color); //
     }
-    sf::Texture* weaponTexture = new sf::Texture();
-    weaponTexture->loadFromFile("RedPoint.png");
 //    for (int i = 0; i < WEAPONS_COUNT; i++)
 //    {
 //        weaponVector.push_back(std::make_pair<std::unique_ptr<Weapon>, int>(std::unique_ptr<Weapon>{new Weapon()}, 10));
@@ -39,6 +37,10 @@ void Player::setNextCurrentUnit()
     currentUnitID++;
     if (currentUnitID == UNIT_COUNTER)
         currentUnitID = 0;
+    if (getUnits()[currentUnitID].getState() == UnitState::dead)
+    {
+        setNextCurrentUnit();
+    }
 }
 
 Unit *Player::getCurrentUnit() {
@@ -52,4 +54,22 @@ unsigned int Player::getCurrentWeaponID() {
 void Player::setCurrentWeaponID(unsigned int newID)
 {
     currentWeaponID = newID;
+}
+
+bool Player::getIsDefeated() {
+    return isDefeated;
+}
+
+void Player::analiseSituation()
+{
+    bool isAnyoneAlive = false;
+    for (int i = 0; i < UNIT_COUNTER; i++)
+    {
+        if (units[i]->getState() != UnitState::dead)
+        {
+            isAnyoneAlive = true;
+        }
+    }
+    if (!isAnyoneAlive)
+        isDefeated = true;
 }

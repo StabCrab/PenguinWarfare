@@ -10,14 +10,17 @@ class Projectile : public Entity
 {
 private:
     bool isBlowWhenCollides;
-    int damage;
+    unsigned int damage;
     float explosionRadius;
 public:
     Projectile(const std::string& texturePath, sf::Vector2f size, float mass, bool isBlowWhenCollides,
-               sf::Vector2f initialMomentum, int damage, float explosionRadius);
+               int damage, float explosionRadius);
     Projectile(sf::Texture* texture, sf::Vector2f size, float mass, bool isBlowWhenCollides,
-               sf::Vector2f initialMomentum, int damage, float explosionRadius);
+               int damage, float explosionRadius);
     ~Projectile();
+    unsigned int getDamage();
+    float getExplosionRadius();
+    bool getIsBlowWhenCollides();
 
 };
 

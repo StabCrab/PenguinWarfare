@@ -8,13 +8,15 @@
 class Animation
 {
 public:
-    sf::IntRect uvRect;
 
     void Update(unsigned int row, float deltaTime, bool faceRight);
 
     Animation(sf::Vector2u textureSize, sf::Vector2u imageCount, float switchTime);
     ~Animation();
+
+    sf::IntRect getUVRect();
 private:
+    sf::IntRect uvRect;
     sf::Vector2u imageCount;
     sf::Vector2u currentImage;
     float totalTime;

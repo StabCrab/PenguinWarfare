@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
                             {
                                 weaponCount[i] = INT_MAX;
                             }
-                            gameWorld = new GameWorld(window, "terrain2.png",2, weaponCount);
+                            gameWorld = new GameWorld(window, "terrainA.png",2, weaponCount);
                             state = gameState::game;
                             delete menuScreen;
                             break;

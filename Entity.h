@@ -12,6 +12,7 @@ private:
     sf::RectangleShape body;
     const float mass;
     sf::Vector2f momentum = sf::Vector2f(0.f,0.f);
+    sf::Vector2f pseudoCoordinates;
 
 public:
     Entity(const std::string& texturePath,sf::Vector2f size ,float mass);
@@ -47,6 +48,8 @@ public:
     void rotate(float angle);
     void setRotation(float angle);
     void reverse();
+    sf::Vector2f getPseudoCoordinates();
+    void frictionForce();
 };
 
 

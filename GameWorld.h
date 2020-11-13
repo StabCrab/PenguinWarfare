@@ -10,7 +10,15 @@
 #include "algorithm"
 #include "Projectile.h"
 #include "Crosshair.h"
-static const float VIEW_HEIGHT = 500.f;
+#include <thread>
+enum class GameState
+{
+    unitWalking = 0,
+    unitAiming,
+    projectileFlying,
+    consequences
+
+};
 class GameWorld
 {
 private:
@@ -19,15 +27,20 @@ private:
     float deltaTime = 0.003;
     sf::Clock clock;
     const float gravity = 10;
-    std::vector<std::unique_ptr<Player>> playerVector;
+    std::vector<Player*> playerVector;
     Unit* currentUnit;
     sf::RectangleShape* currentWeaponInHands;
+    sf::RectangleShape powerMeter;
+    sf::Texture* powerMeterTexture;
     unsigned int currentPlayerID = 0;
-    bool isShooting = false;
+    GameState gameState = GameState::unitWalking;
     Weapon* weapons[WEAPONS_COUNT];
     Projectile* projectile;
     Crosshair* crosshair;
     bool isDownClockwise = true;
+    float shootPower = 0;
+    sf::Font font;
+    float timer;
 public:
     GameWorld(sf::RenderWindow& window, std::string level,
               const unsigned int numberOfPlayers,
@@ -39,6 +52,9 @@ public:
     void keyReleasedEvent(sf::Keyboard::Key);
     void checkGravityAndCollision();
     void shoot();
+    void countShootPower();
+    void analisePlayers();
+    void spawnUnit(Unit* unit);
 };
 
 

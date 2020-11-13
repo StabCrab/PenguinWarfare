@@ -7,6 +7,7 @@
 Entity::Entity(const std::string& texturePath,sf::Vector2f size ,float mass)
 : mass(mass)
 {
+    momentum = sf::Vector2f(0,0);
     body.setSize(size);
     body.setOrigin(body.getSize() / 2.f);
     auto* texture = new sf::Texture;
@@ -119,16 +120,22 @@ void Entity::clearMomentum()
 
 void Entity::moveBody()
 {
-    body.move(momentum);
+    if (body.getPosition().y < 500 && body.getPosition().y > 400)
+    {
+        if (momentum.y > 0)
+            body.setPosition(pseudoCoordinates);
+        if (momentum.y < 0)
+            pseudoCoordinates = body.getPosition();
+    }
+    if (body.getPosition().y < 500)
+        pseudoCoordinates += momentum;
+    else
+        body.move(momentum);
 }
 
 void Entity::addVectorToMomentum(sf::Vector2f movement)
 {
     momentum += movement;
-    if (momentum.x > 3)
-        momentum.x = 3;
-    if (momentum.y > 3)
-        momentum.y = 3;
 }
 
 void Entity::pushRightFromTexture(float deltaTime)
@@ -169,5 +176,27 @@ void Entity::reverse()
     body.setScale(-1, 1);
 }
 
+sf::Vector2f Entity::getPseudoCoordinates() {
+    return pseudoCoordinates;
+}
+void Entity::frictionForce()
+{
+    if (momentum.x == 0)
+        return;
+    if (momentum.x > 0)
+    {
+        if (momentum.x < mass * 0.5f)
+            momentum.x = 0;
+        else
+            momentum.x -= mass * 0.5f;
+    }
+    if (momentum.x < 0)
+    {
+        if (momentum.x > mass * 0.5f)
+            momentum.x = 0;
+        else
+            momentum.x += mass * 0.5f;
+    }
+}
 
 

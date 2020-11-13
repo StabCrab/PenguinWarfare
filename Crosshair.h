@@ -13,6 +13,7 @@ class Crosshair
 private:
     sf::RectangleShape crosshair;
     sf::Vector2f crosshairVector = sf::Vector2f(RADIUS, 0);
+    float speed = 1.f;
 public:
     Crosshair(std::string texturePath, sf::Vector2f centerCoordinates);
     ~Crosshair();
@@ -21,7 +22,8 @@ public:
     void clear(sf::Vector2f centerCoordinates);
     sf::Vector2f getCrosshairVector();
     void reverseCrosshair();
-    sf::Vector2f getCrosshairVectorForShooting();
+    void increaseSpeed();
+    void clearSpeed();
 };
 
 

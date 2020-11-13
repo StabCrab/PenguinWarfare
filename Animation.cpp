@@ -49,3 +49,7 @@ Animation::~Animation()
 {
 
 }
+
+sf::IntRect Animation::getUVRect() {
+    return uvRect;
+}
