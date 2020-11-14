@@ -35,14 +35,16 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
         if (i == 0)
         {
             playerVector.push_back(new Player(sf::Color::Red, weaponCount, &font));
-            spawnUnit(&playerVector[0]->getUnits()[0]);
-            //spawnUnit(&playerVector[0]->getUnits()[1]);
+            //playerVector[0]->getUnits()[0].setPosition(sf::Vector2f(5000, 2800));
+            spawnUnit(playerVector[0]->getUnit(0));
+            spawnUnit(playerVector[0]->getUnit(1));
         }
         if (i == 1)
         {
             playerVector.push_back(new Player(sf::Color::Blue, weaponCount, &font));
-            spawnUnit(&playerVector[1]->getUnits()[0]);
-            //spawnUnit(&playerVector[1]->getUnits()[1]);
+            //playerVector[1]->getUnits()[0].setPosition(sf::Vector2f(4000, 2800));
+            spawnUnit(playerVector[1]->getUnit(0));
+            spawnUnit(playerVector[1]->getUnit(1));
         }
         if (i == 2)
         {
@@ -53,7 +55,7 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
             playerVector.push_back(new Player(sf::Color::Yellow, weaponCount, &font));
         }
     }
-    currentUnit = &playerVector[0]->getUnits()[0];
+    currentUnit = playerVector[0]->getUnit(0);
     view.setCenter(currentUnit->getPosition());
     crosshair = new Crosshair("Crosshair.png", view.getCenter());
     currentWeaponInHands = new sf::RectangleShape;
@@ -126,10 +128,10 @@ void GameWorld::draw(sf::RenderWindow& window)
     {
         for (int i = 0; i < UNIT_COUNTER; i++)
         {
-            if (player->getUnits()[i].getIsOutOfBounds())
+            if (player->getUnit(i)->getIsOutOfBounds())
                 continue;
-            player->getUnits()[i].draw(window, deltaTime);
-            player->getUnits()[i].moveBody();
+            player->getUnit(i)->draw(window, deltaTime);
+            player->getUnit(i)->moveBody();
         }
     }
     currentWeaponInHands->setPosition(currentUnit->getPosition());
@@ -239,14 +241,14 @@ void GameWorld::checkGravityAndCollision()
             {
                 for (int i = 0; i < UNIT_COUNTER; i++)
                 {
-                    if (player->getUnits()[i].getIsOutOfBounds())
+                    if (player->getUnit(i)->getIsOutOfBounds())
                         continue;
-                    distanceVector =  player->getUnits()[i].getPosition() - projectile->getPosition();
+                    distanceVector =  player->getUnit(i)->getPosition() - projectile->getPosition();
                     distance = sqrt(distanceVector.x * distanceVector.x
                             + distanceVector.y * distanceVector.y);
                     if (distance < projectile->getExplosionRadius() + 50)
                     {
-                        player->getUnits()[i].takeDamage(distanceVector / distance * 10.f
+                        player->getUnit(i)->takeDamage(distanceVector / distance * 10.f
                                                          , projectile->getDamage() / (distance / 10.f));
                     }
                 }
@@ -273,35 +275,35 @@ void GameWorld::checkGravityAndCollision()
     {
         for (int i = 0; i < UNIT_COUNTER; i++)
         {
-            if (player->getUnits()[i].getIsOutOfBounds())
+            if (player->getUnit(i)->getIsOutOfBounds())
                 continue;
-            if (terrain.getPixel(player->getUnits()->getBottomCoordinates()) == sf::Color::Transparent
-                && terrain.getPixel(player->getUnits()->getLeftBottomCoordinates()) == sf::Color::Transparent &&
-                terrain.getPixel(player->getUnits()->getRightBottomCoordinates()) == sf::Color::Transparent)
+            if (terrain.getPixel(player->getUnit(i)->getBottomCoordinates()) == sf::Color::Transparent
+                && terrain.getPixel(player->getUnit(i)->getLeftBottomCoordinates()) == sf::Color::Transparent &&
+                terrain.getPixel(player->getUnit(i)->getRightBottomCoordinates()) == sf::Color::Transparent)
             {
-                player->getUnits()[i].fall(deltaTime,gravity);
+                player->getUnit(i)->fall(deltaTime,gravity);
             }
-            if (terrain.getPixel(player->getUnits()->getBottomCoordinates()) != sf::Color::Transparent
-            && player->getUnits()[i].getState() != UnitState::walking)
+            if (terrain.getPixel(player->getUnit(i)->getBottomCoordinates()) != sf::Color::Transparent
+            && player->getUnit(i)->getState() != UnitState::walking)
             {
-                player->getUnits()[i].frictionForce();
+                player->getUnit(i)->frictionForce();
             }
-            while ((terrain.getPixel(player->getUnits()->getBottomCoordinates()) != sf::Color::Transparent))
+            while ((terrain.getPixel(player->getUnit(i)->getBottomCoordinates()) != sf::Color::Transparent))
             {
-                player->getUnits()[i].pushUpFromTexture(deltaTime);
+                player->getUnit(i)->pushUpFromTexture(deltaTime);
             }
-            while (((terrain.getPixel(player->getUnits()->getLeftCoordinates()) != sf::Color::Transparent)))
+            while (((terrain.getPixel(player->getUnit(i)->getLeftCoordinates()) != sf::Color::Transparent)))
             {
-                player->getUnits()[i].pushRightFromTexture(deltaTime);
+                player->getUnit(i)->pushRightFromTexture(deltaTime);
             }
-            while (((terrain.getPixel(player->getUnits()->getRightCoordinates()) != sf::Color::Transparent)))
+            while (((terrain.getPixel(player->getUnit(i)->getRightCoordinates()) != sf::Color::Transparent)))
             {
-                player->getUnits()[i].pushLeftFromTexture(deltaTime);
+                player->getUnit(i)->pushLeftFromTexture(deltaTime);
             }
-            if (player->getUnits()[i].getBottomCoordinates().y > 2900)
+            if (player->getUnit(i)->getBottomCoordinates().y > 2900)
             {
-                player->getUnits()[i].makeUnitOutOfBounds();
-                if (&player->getUnits()[i] == currentUnit)
+                player->getUnit(i)->makeUnitOutOfBounds();
+                if (player->getUnit(i) == currentUnit)
                     gameState = GameState::consequences;
             }
         }

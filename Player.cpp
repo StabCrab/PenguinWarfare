@@ -9,8 +9,12 @@ Player::Player(sf::Color color, const int weaponCount[WEAPONS_COUNT],sf::Font* f
     this->color = color;
     for(int i = 0; i < UNIT_COUNTER; i++)
     {
-        units[i] = new Unit("tux_from_linux.png", sf::Vector2f (100, 150), 1.5f,
-                        sf::Vector2u(3,9), 0.25, 100, font, color); //
+        if (color == sf::Color::Red)
+            units[i] = new Unit("PenguinRed.png", sf::Vector2f (100, 150), 1.5f,
+                        sf::Vector2u(3,9), 0.25, 100, font, color);
+        else if (color == sf::Color::Blue)
+            units[i] = new Unit("PenguinBlue.png", sf::Vector2f (100, 150), 1.5f,
+                                sf::Vector2u(3,9), 0.25, 100, font, color);
     }
 //    for (int i = 0; i < WEAPONS_COUNT; i++)
 //    {
@@ -28,8 +32,8 @@ void Player::playerTurn()
 
 }
 
-Unit* Player::getUnits() {
-    return *units;
+Unit* Player::getUnit(int number) {
+    return units[number];
 }
 
 void Player::setNextCurrentUnit()
@@ -37,7 +41,7 @@ void Player::setNextCurrentUnit()
     currentUnitID++;
     if (currentUnitID == UNIT_COUNTER)
         currentUnitID = 0;
-    if (getUnits()[currentUnitID].getState() == UnitState::dead)
+    if (units[currentUnitID]->getState() == UnitState::dead)
     {
         setNextCurrentUnit();
     }

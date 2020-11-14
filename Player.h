@@ -7,7 +7,7 @@
 #include "Unit.h"
 #include "Weapon.h"
 
-#define UNIT_COUNTER 1
+#define UNIT_COUNTER 2
 class Player
 {
 private:
@@ -22,7 +22,7 @@ public:
     Player(sf::Color color, const int weaponCount[WEAPONS_COUNT], sf::Font* font);
     ~Player();
     void playerTurn();
-    Unit* getUnits();
+    Unit* getUnit(int number);
     void setNextCurrentUnit();
     Unit* getCurrentUnit();
     unsigned int getCurrentWeaponID();
