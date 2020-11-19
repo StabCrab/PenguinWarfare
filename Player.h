@@ -7,7 +7,7 @@
 #include "Unit.h"
 #include "Weapon.h"
 
-#define UNIT_COUNTER 2
+#define UNIT_COUNTER 4
 class Player
 {
 private:

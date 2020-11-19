@@ -12,6 +12,7 @@ private:
     bool isBlowWhenCollides;
     unsigned int damage;
     float explosionRadius;
+    bool isOutOfBounds = false;
 public:
     Projectile(const std::string& texturePath, sf::Vector2f size, float mass, bool isBlowWhenCollides,
                int damage, float explosionRadius);

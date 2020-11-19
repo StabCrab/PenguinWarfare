@@ -55,11 +55,12 @@ void Unit::walk(float deltaTime, bool isGoingRight)
 
 void Unit::draw(sf::RenderWindow& window, float deltaTime)
 {
-    animation.Update(static_cast<unsigned int>(state), deltaTime, isFaceRight);
+    animation.Update(static_cast<unsigned int>(state) % 9, deltaTime, isFaceRight);
     setTextureRect(animation.getUVRect());
     drawBody(window);
     info.setPosition(getTopCoordinates());
-    window.draw(info);
+    if (state != UnitState::dead)
+        window.draw(info);
 }
 
 void Unit::setIsFaceRight(bool isFaceRight)
@@ -93,6 +94,26 @@ void Unit::makeUnitOutOfBounds()
 
 bool Unit::getIsOutOfBounds() {
     return isOutOfBounds;
+}
+
+void Unit::jumpForward()
+{
+    sf::Vector2f movement;
+    if (isFaceRight)
+        movement = sf::Vector2f(4, -2);
+    else
+        movement = sf::Vector2f(-4, -2);
+    addVectorToMomentum(movement);
+}
+
+void Unit::jumpBackwards()
+{
+    sf::Vector2f movement;
+    if (isFaceRight)
+        movement = sf::Vector2f(-2, -4);
+    else
+        movement = sf::Vector2f(2, -4);
+    addVectorToMomentum(movement);
 }
 
 

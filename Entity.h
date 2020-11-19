@@ -13,6 +13,7 @@ private:
     const float mass;
     sf::Vector2f momentum = sf::Vector2f(0.f,0.f);
     sf::Vector2f pseudoCoordinates;
+    bool isOutOfBounds = false;
 
 public:
     Entity(const std::string& texturePath,sf::Vector2f size ,float mass);
@@ -50,6 +51,8 @@ public:
     void reverse();
     sf::Vector2f getPseudoCoordinates();
     void frictionForce();
+    bool getIsOutOfBounds();
+    void setOutOfBounds(bool newIsOutOfBounds);
 };
 
 

@@ -40,3 +40,4 @@ bool Projectile::getIsBlowWhenCollides()
 {
     return isBlowWhenCollides;
 }
+

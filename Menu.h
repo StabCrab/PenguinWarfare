@@ -7,7 +7,12 @@
 #include <SFML/Graphics.hpp>
 
 #define NUMBER_OF_ITEMS 3
-enum class menuCode{startGame = 0, goOn, close};
+enum class menuCode
+{
+    startGame = 0,
+    goOn,
+    close
+};
 class Menu {
 public:
     Menu(float width, float height);

@@ -120,17 +120,32 @@ void Entity::clearMomentum()
 
 void Entity::moveBody()
 {
+    if (body.getPosition().y >= 500)
+        body.move(momentum);
     if (body.getPosition().y < 500 && body.getPosition().y > 400)
     {
-        if (momentum.y > 0)
-            body.setPosition(pseudoCoordinates);
-        if (momentum.y < 0)
+        if (momentum.y < 0 && isOutOfBounds == false)
+        {
             pseudoCoordinates = body.getPosition();
+            isOutOfBounds = true;
+        }
+        if (isOutOfBounds == true)
+        {
+            pseudoCoordinates += momentum;
+        }
+        if (momentum.y >= 0 && pseudoCoordinates.y > 400 && isOutOfBounds == true)
+        {
+            isOutOfBounds = false;
+            body.setPosition(pseudoCoordinates);
+            body.move(momentum);
+        }
+        if (momentum.y >= 0 && isOutOfBounds == false)
+        {
+            body.move(momentum);
+        }
     }
-    if (body.getPosition().y < 500)
-        pseudoCoordinates += momentum;
-    else
-        body.move(momentum);
+
+
 }
 
 void Entity::addVectorToMomentum(sf::Vector2f movement)
@@ -157,7 +172,8 @@ void Entity::setTexture(sf::Texture* texture)
     body.setTexture(texture);
 }
 
-sf::Vector2f Entity::getMomentum() {
+sf::Vector2f Entity::getMomentum()
+{
     return momentum;
 }
 
@@ -181,8 +197,6 @@ sf::Vector2f Entity::getPseudoCoordinates() {
 }
 void Entity::frictionForce()
 {
-    if (momentum.x == 0)
-        return;
     if (momentum.x > 0)
     {
         if (momentum.x < mass * 0.5f)
@@ -197,6 +211,16 @@ void Entity::frictionForce()
         else
             momentum.x += mass * 0.5f;
     }
+}
+
+bool Entity::getIsOutOfBounds()
+{
+    return isOutOfBounds;
+}
+
+void Entity::setOutOfBounds(bool newIsOutOfBounds)
+{
+    isOutOfBounds = newIsOutOfBounds;
 }
 
 

@@ -16,6 +16,7 @@ enum class UnitState
     jumping = 2,
     gettingDamage = 3,
     dead = 8,
+    falling,
     outOfBounds
 };
 class Unit : public Entity
@@ -33,6 +34,8 @@ public:
     UnitState getState();
     void makeUnitOutOfBounds();
     bool getIsOutOfBounds();
+    void jumpForward();
+    void jumpBackwards();
 private:
     bool isOutOfBounds = false;
     int health = 100;

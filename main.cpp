@@ -11,6 +11,7 @@ int main(int argc, char* argv[])
 
     sf::RenderWindow window(sf::VideoMode(width, height),
                             "Penguin Warfare");
+
     window.setTitle("Penguin Warfare");
 
     Menu* menuScreen = new Menu(width, height);

@@ -16,8 +16,8 @@ enum class GameState
     unitWalking = 0,
     unitAiming,
     projectileFlying,
-    consequences
-
+    consequences,
+    lookingAround
 };
 class GameWorld
 {

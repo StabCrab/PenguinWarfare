@@ -38,6 +38,8 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
             //playerVector[0]->getUnits()[0].setPosition(sf::Vector2f(5000, 2800));
             spawnUnit(playerVector[0]->getUnit(0));
             spawnUnit(playerVector[0]->getUnit(1));
+            spawnUnit(playerVector[0]->getUnit(2));
+            spawnUnit(playerVector[0]->getUnit(3));
         }
         if (i == 1)
         {
@@ -45,14 +47,24 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
             //playerVector[1]->getUnits()[0].setPosition(sf::Vector2f(4000, 2800));
             spawnUnit(playerVector[1]->getUnit(0));
             spawnUnit(playerVector[1]->getUnit(1));
+            spawnUnit(playerVector[1]->getUnit(2));
+            spawnUnit(playerVector[1]->getUnit(3));
         }
         if (i == 2)
         {
             playerVector.push_back(new Player(sf::Color::Green, weaponCount, &font));
+            spawnUnit(playerVector[2]->getUnit(0));
+            spawnUnit(playerVector[2]->getUnit(1));
+            spawnUnit(playerVector[2]->getUnit(2));
+            spawnUnit(playerVector[2]->getUnit(3));
         }
         if (i == 3)
         {
             playerVector.push_back(new Player(sf::Color::Yellow, weaponCount, &font));
+            spawnUnit(playerVector[3]->getUnit(0));
+            spawnUnit(playerVector[3]->getUnit(1));
+            spawnUnit(playerVector[3]->getUnit(2));
+            spawnUnit(playerVector[3]->getUnit(3));
         }
     }
     currentUnit = playerVector[0]->getUnit(0);
@@ -71,6 +83,20 @@ GameWorld::~GameWorld() {
 void GameWorld::draw(sf::RenderWindow& window)
 {
     terrain.draw(window);
+    checkGravityAndCollision();
+    for (auto& player : playerVector)
+    {
+        for (int i = 0; i < UNIT_COUNTER; i++)
+        {
+            if (player->getUnit(i)->getIsOutOfBounds())
+                continue;
+            if (player->getUnit(i) != currentUnit)
+            {
+                player->getUnit(i)->draw(window, deltaTime);
+                player->getUnit(i)->moveBody();
+            }
+        }
+    }
     if (gameState == GameState::unitWalking)
     {
         view.setCenter(currentUnit->getPosition());
@@ -78,7 +104,6 @@ void GameWorld::draw(sf::RenderWindow& window)
     }
     else if (gameState == GameState::projectileFlying)
     {
-        view.setCenter(projectile->getPosition());
         projectile->getBody().setRotation(90.f);
         projectile->moveBody();
         if (projectile->getMomentum().x < 0)
@@ -88,29 +113,44 @@ void GameWorld::draw(sf::RenderWindow& window)
         projectile->setRotation(atanf(projectile->getMomentum().y / projectile->getMomentum().x) * 180 / 3.14);
         if (projectile->getPosition().y < 1040)
         {
-            view.setCenter(sf::Vector2f(projectile->getPosition().x, 1060));
-            projectile->drawBody(window);
-        }
-        else if (projectile->getPosition().y < 500)
-        {
-            view.setCenter(sf::Vector2f(projectile->getPseudoCoordinates().x, 1060));
+            if (projectile->getIsOutOfBounds())
+                view.setCenter(sf::Vector2f(projectile->getPseudoCoordinates().x, 1040));
+            else
+            {
+                view.setCenter(sf::Vector2f(projectile->getPosition().x, 1040));
+                projectile->drawBody(window);
+            }
         }
         else
         {
-            projectile->drawBody(window);
             view.setCenter(projectile->getPosition());
+            projectile->drawBody(window);
         }
     }
     else if (gameState == GameState::consequences)
     {
-        if (timer > 1)
+        bool isAnyoneMoving = false;
+        for (auto& player : playerVector)
         {
-            analisePlayers();
-            newTurn();
-            gameState = GameState::unitWalking;
+            for (int i = 0; i < UNIT_COUNTER; i++)
+            {
+                if (player->getUnit(i)->getMomentum().x != 0
+                && player->getUnit(i)->getMomentum().y != 0
+                && player->getUnit(i)->getState() != UnitState::dead)
+                    isAnyoneMoving = true;
+            }
         }
-        else
-            timer += deltaTime;
+        if (!isAnyoneMoving)
+        {
+            if (timer > 1)
+            {
+                analisePlayers();
+                newTurn();
+                gameState = GameState::unitWalking;
+            }
+            else
+                timer += deltaTime;
+        }
     }
     else if (gameState== GameState::unitAiming)
     {
@@ -123,17 +163,10 @@ void GameWorld::draw(sf::RenderWindow& window)
         window.draw(powerMeter);
     }
     window.setView(view);
-    checkGravityAndCollision();
-    for (auto& player : playerVector)
-    {
-        for (int i = 0; i < UNIT_COUNTER; i++)
-        {
-            if (player->getUnit(i)->getIsOutOfBounds())
-                continue;
-            player->getUnit(i)->draw(window, deltaTime);
-            player->getUnit(i)->moveBody();
-        }
-    }
+
+    currentUnit->draw(window, deltaTime);
+    currentUnit->moveBody();
+
     currentWeaponInHands->setPosition(currentUnit->getPosition());
     currentWeaponInHands->setRotation(atanf(crosshair->getCrosshairVector().y / crosshair->getCrosshairVector().x) * 180 / 3.14);
     window.draw(*currentWeaponInHands);
@@ -145,45 +178,57 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
         && terrain.getPixel(currentUnit->getLeftBottomCoordinates()) == sf::Color::Transparent &&
         terrain.getPixel(currentUnit->getRightBottomCoordinates()) == sf::Color::Transparent)
     {
+
         return;
     }
     if (key == sf::Keyboard::D)
     {
+        if (gameState == GameState::lookingAround)
+        {
+            if (view.getCenter().x < 7000)
+                view.setCenter(sf::Vector2f(view.getCenter().x + deltaTime * 10000.f, view.getCenter().y));
+        }
         if (gameState != GameState::unitWalking)
             return;
-        if (terrain.getPixel(currentUnit->getBottomCoordinates()) != sf::Color::Transparent
-            || terrain.getPixel(currentUnit->getLeftBottomCoordinates()) != sf::Color::Transparent ||
-            terrain.getPixel(currentUnit->getRightBottomCoordinates()) != sf::Color::Transparent)
+
+        currentUnit->walk(deltaTime, true);
+        if (crosshair->getCrosshairVector().x < 0)
         {
-            currentUnit->walk(deltaTime, true);
-            if (crosshair->getCrosshairVector().x < 0)
-            {
-                crosshair->reverseCrosshair();
-                isDownClockwise = true;
-            }
-            currentWeaponInHands->setScale(1, 1);
+            crosshair->reverseCrosshair();
+            isDownClockwise = true;
         }
+        currentWeaponInHands->setScale(1, 1);
+
     }
     if (key == sf::Keyboard::A)
     {
+        if (gameState == GameState::lookingAround)
+        {
+            if (view.getCenter().x > 1000)
+                view.setCenter(sf::Vector2f(view.getCenter().x - deltaTime * 10000.f, view.getCenter().y));
+        }
         if (gameState != GameState::unitWalking)
             return;
-        if (terrain.getPixel(currentUnit->getBottomCoordinates()) != sf::Color::Transparent
-            || terrain.getPixel(currentUnit->getLeftBottomCoordinates()) != sf::Color::Transparent ||
-            terrain.getPixel(currentUnit->getRightBottomCoordinates()) != sf::Color::Transparent)
+        currentUnit->walk(deltaTime, false);
+        if (crosshair->getCrosshairVector().x > 0)
         {
-            currentUnit->walk(deltaTime, false);
-            if (crosshair->getCrosshairVector().x > 0)
-            {
-                crosshair->reverseCrosshair();
-                isDownClockwise = false;
-            }
-            currentWeaponInHands->setScale(-1, 1);
+            crosshair->reverseCrosshair();
+            isDownClockwise = false;
         }
+        currentWeaponInHands->setScale(-1, 1);
     }
     if (key == sf::Keyboard::Enter)
     {
-        newTurn();
+        if (gameState == GameState::unitWalking)
+        {
+            gameState = GameState::lookingAround;
+            view.setSize(2560, 1720);
+        }
+        else if (gameState == GameState::lookingAround)
+        {
+            view.setSize(1920, 1080);
+            gameState = GameState::unitWalking;
+        }
     }
     if (key == sf::Keyboard::Space)
     {
@@ -196,8 +241,26 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
     {
         playerVector[currentPlayerID]->setCurrentWeaponID(0);
     }
+    if (key == sf::Keyboard::Q)
+    {
+        if (currentUnit->getIsFaceRight())
+            currentUnit->jumpBackwards();
+        else
+            currentUnit->jumpForward();
+    }
+    if (key == sf::Keyboard::E)
+    {
+        if (currentUnit->getIsFaceRight())
+            currentUnit->jumpForward();
+        else
+            currentUnit->jumpBackwards();
+    }
     if (key == sf::Keyboard::W)
     {
+        if (gameState == GameState::lookingAround)
+        {
+            return;
+        }
         crosshair->move(deltaTime, !isDownClockwise);
         if (crosshair->getCrosshairVector().x < 0)
             currentUnit->setIsFaceRight(false);
@@ -207,6 +270,10 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
     }
     if (key == sf::Keyboard::S)
     {
+        if (gameState == GameState::lookingAround)
+        {
+            return;
+        }
         crosshair->move(deltaTime, isDownClockwise);
         if (crosshair->getCrosshairVector().x < 0)
             currentUnit->setIsFaceRight(false);
@@ -217,9 +284,28 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
 
 }
 
+void GameWorld::keyReleasedEvent(sf::Keyboard::Key key)
+{
+    if (gameState == GameState::lookingAround)
+        return;
+    if (key == sf::Keyboard::D || key == sf::Keyboard::A)
+        currentUnit->idle(deltaTime);
+    if (key == sf::Keyboard::W || key == sf::Keyboard::S)
+    {
+        if (crosshair->getCrosshairVector().x > 0)
+            isDownClockwise = true;
+        if (crosshair->getCrosshairVector().x < 0)
+            isDownClockwise = false;
+        crosshair->clearSpeed();
+    }
+    if (key == sf::Keyboard::Space)
+    {
+        shoot();
+    }
+}
+
 void GameWorld::newTurn()
 {
-    //currentUnit->idle(deltaTime);
     currentPlayerID++;
     if (currentPlayerID >= playerVector.size())
         currentPlayerID = 0;
@@ -264,7 +350,8 @@ void GameWorld::checkGravityAndCollision()
             projectile->fall(deltaTime, gravity);
         }
         if (projectile->getPosition().x > terrain.getTerrainMaxX() ||
-            projectile->getPosition().x < terrain.getSpritePostition().x)
+            projectile->getPosition().x < terrain.getSpritePostition().x||
+            projectile->getPosition().y > 2990)
         {
             delete projectile;
             gameState = GameState::consequences;
@@ -300,34 +387,17 @@ void GameWorld::checkGravityAndCollision()
             {
                 player->getUnit(i)->pushLeftFromTexture(deltaTime);
             }
-            if (player->getUnit(i)->getBottomCoordinates().y > 2900)
+            if (player->getUnit(i)->getBottomCoordinates().y > 2900 ||
+            player->getUnit(i)->getPosition().x < 0 || player->getUnit(i)->getPosition().x > 8000)
             {
                 player->getUnit(i)->makeUnitOutOfBounds();
                 if (player->getUnit(i) == currentUnit)
                     gameState = GameState::consequences;
             }
         }
-
     }
 }
 
-void GameWorld::keyReleasedEvent(sf::Keyboard::Key key)
-{
-    if (key == sf::Keyboard::D || key == sf::Keyboard::A)
-        currentUnit->idle(deltaTime);
-    if (key == sf::Keyboard::W || key == sf::Keyboard::S)
-    {
-        if (crosshair->getCrosshairVector().x > 0)
-            isDownClockwise = true;
-        if (crosshair->getCrosshairVector().x < 0)
-            isDownClockwise = false;
-        crosshair->clearSpeed();
-    }
-    if (key == sf::Keyboard::Space)
-    {
-        shoot();
-    }
-}
 
 void GameWorld::shoot()
 {
