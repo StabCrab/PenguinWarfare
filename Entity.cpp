@@ -199,18 +199,20 @@ void Entity::frictionForce()
 {
     if (momentum.x > 0)
     {
-        if (momentum.x < mass * 0.5f)
+        if (momentum.x < mass * 2)
             momentum.x = 0;
         else
-            momentum.x -= mass * 0.5f;
+            momentum.x -= mass * 2;
     }
     if (momentum.x < 0)
     {
-        if (momentum.x > mass * 0.5f)
+        if (momentum.x > mass * 2)
             momentum.x = 0;
         else
-            momentum.x += mass * 0.5f;
+            momentum.x += mass * 2;
     }
+    if (momentum.y != 0)
+        momentum.y = 0;
 }
 
 bool Entity::getIsOutOfBounds()
@@ -221,6 +223,11 @@ bool Entity::getIsOutOfBounds()
 void Entity::setOutOfBounds(bool newIsOutOfBounds)
 {
     isOutOfBounds = newIsOutOfBounds;
+}
+
+void Entity::nullifyMomentum()
+{
+    momentum = sf::Vector2f(0,0);
 }
 
 

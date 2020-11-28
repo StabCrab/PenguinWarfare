@@ -5,7 +5,6 @@
 #ifndef WORMSPROTOTYPE_GAMEWORLD_H
 #define WORMSPROTOTYPE_GAMEWORLD_H
 #include "Terrain.h"
-//#include "Unit.h" I dont want to include Unit now
 #include "Player.h"
 #include "algorithm"
 #include "Projectile.h"
@@ -17,15 +16,14 @@ enum class GameState
     unitAiming,
     projectileFlying,
     consequences,
-    lookingAround
+    lookingAround,
+    shuttingDown
 };
 class GameWorld
 {
 private:
     Terrain terrain;
     sf::View view;
-    float deltaTime = 0.003;
-    sf::Clock clock;
     const float gravity = 10;
     std::vector<Player*> playerVector;
     Unit* currentUnit;
@@ -46,13 +44,14 @@ public:
               const unsigned int numberOfPlayers,
               const int weaponCount[WEAPONS_COUNT]);
     ~GameWorld();
+    GameState getGameState();
     void newTurn();
-    void draw(sf::RenderWindow& window);
-    void keyPressedEvent(sf::Keyboard::Key);
-    void keyReleasedEvent(sf::Keyboard::Key);
-    void checkGravityAndCollision();
+    void draw(sf::RenderWindow& window, float deltaTime);
+    void keyPressedEvent(sf::Keyboard::Key, float deltaTime);
+    void keyReleasedEvent(sf::Keyboard::Key, float deltaTime);
+    void checkGravityAndCollision(float deltaTime);
     void shoot();
-    void countShootPower();
+    void countShootPower(float deltaTime);
     void analisePlayers();
     void spawnUnit(Unit* unit);
 };

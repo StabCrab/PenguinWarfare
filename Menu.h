@@ -7,15 +7,18 @@
 #include <SFML/Graphics.hpp>
 
 #define NUMBER_OF_ITEMS 3
-enum class menuCode
+#define NUMBER_OF_START_GAME_ITEMS 4
+enum class MenuState
 {
-    startGame = 0,
-    goOn,
-    close
+    generalMenu = 0,
+    gameStartOptions,
+    startingGame,
+    options,
+    closing,
 };
 class Menu {
 public:
-    Menu(float width, float height);
+    Menu(sf::Vector2u windowSize);
     ~Menu();
 
     void draw(sf::RenderWindow& window);
@@ -25,16 +28,21 @@ public:
 
     unsigned int getSelectedItemIndex();
 
-    menuCode keyPressedEvent(sf::Keyboard::Key);
-    void keyReleasedEvent(sf::Keyboard::Key);
+    void keyPressedEvent(sf::Keyboard::Key key);
+    void keyReleasedEvent(sf::Keyboard::Key key);
 
-    void runMenu(sf::RenderWindow& window); //For now we can do it only from main TODO: Think how to get to menu from GameWorld
+    MenuState getMenuState();
+
+    unsigned int getNumberOfPlayers();
 
 private:
     bool isDone = false;
     unsigned int selectedItemIndex;
     sf::Font font;
-    sf::Text menuItems[NUMBER_OF_ITEMS];
+    sf::Text* menuItems;
+    sf::Text* startGameItems;
+    MenuState menuState;
+    unsigned int numberOfTeams = 2;
 };
 
 

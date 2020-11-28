@@ -9,12 +9,8 @@ Player::Player(sf::Color color, const int weaponCount[WEAPONS_COUNT],sf::Font* f
     this->color = color;
     for(int i = 0; i < UNIT_COUNTER; i++)
     {
-        if (color == sf::Color::Red)
-            units[i] = new Unit("PenguinRed.png", sf::Vector2f (100, 150), 1.5f,
-                        sf::Vector2u(3,9), 0.25, 100, font, color);
-        else if (color == sf::Color::Blue)
-            units[i] = new Unit("PenguinBlue.png", sf::Vector2f (100, 150), 1.5f,
-                                sf::Vector2u(3,9), 0.25, 100, font, color);
+        units[i] = new Unit("PenguinRed.png", sf::Vector2f (100, 150), 2.5,
+                            sf::Vector2u(3,9), 0.25, 100, font, color);
     }
 //    for (int i = 0; i < WEAPONS_COUNT; i++)
 //    {
@@ -24,7 +20,10 @@ Player::Player(sf::Color color, const int weaponCount[WEAPONS_COUNT],sf::Font* f
 
 Player::~Player()
 {
-
+    for (int i = 0; i < UNIT_COUNTER; i++)
+    {
+        delete units[i];
+    }
 }
 
 void Player::playerTurn()

@@ -12,15 +12,14 @@
 #include "ctime"
 
 GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
-                     const unsigned int numberOfPlayers,
-                     const int weaponCount[WEAPONS_COUNT])
+                     const unsigned int numberOfPlayers, const int weaponCount[WEAPONS_COUNT])
 {
     if (!font.loadFromFile("arial.ttf"))
     {
         throw std::runtime_error("Cannot find font"); //Throw exception if cannot find font
     }
     weapons[0] = new Weapon("Bazooka.png", "Rocket.png",
-                            200, 100.f, 0.2,
+                            200, 100.f, 1.f,
                             sf::Vector2f(40,40), sf::Vector2f(100, 50));
     terrain.setTexture(std::move(level));
     powerMeterTexture = new sf::Texture;
@@ -29,7 +28,7 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
     powerMeter.setTexture(powerMeterTexture);
     powerMeter.setOrigin(0, 40);
     view.setSize(1920, 1080);
-    srand(time(nullptr));
+    rand_r(time(nullptr));
     for (int i = 0; i < numberOfPlayers; i++)
     {
         if (i == 0)
@@ -76,14 +75,23 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
     currentWeaponInHands->setOrigin(currentWeaponInHands->getSize().x / 2, currentWeaponInHands->getSize().y / 4);
 }
 
-GameWorld::~GameWorld() {
-
+GameWorld::~GameWorld()
+{
+    delete weapons[0];
+    for (auto& player : playerVector)
+        delete player;
+    delete powerMeterTexture;
+    delete crosshair;
 }
 
-void GameWorld::draw(sf::RenderWindow& window)
+void GameWorld::draw(sf::RenderWindow& window, float deltaTime)
 {
+    if (gameState == GameState::shuttingDown)
+        return;
+    if (deltaTime > 1)
+        return;
     terrain.draw(window);
-    checkGravityAndCollision();
+    checkGravityAndCollision(deltaTime);
     for (auto& player : playerVector)
     {
         for (int i = 0; i < UNIT_COUNTER; i++)
@@ -146,7 +154,8 @@ void GameWorld::draw(sf::RenderWindow& window)
             {
                 analisePlayers();
                 newTurn();
-                gameState = GameState::unitWalking;
+                if (gameState != GameState::shuttingDown)
+                    gameState = GameState::unitWalking;
             }
             else
                 timer += deltaTime;
@@ -155,9 +164,9 @@ void GameWorld::draw(sf::RenderWindow& window)
     else if (gameState== GameState::unitAiming)
     {
         if (currentUnit->getIsFaceRight())
-            powerMeter.setScale(shootPower * 100.f, shootPower * 100.f);
+            powerMeter.setScale(shootPower * 15.f, shootPower * 15.f);
         else
-            powerMeter.setScale(-shootPower * 100.f, shootPower * 100.f);
+            powerMeter.setScale(-shootPower * 15.f, shootPower * 15.f);
         powerMeter.setRotation(atanf(crosshair->getCrosshairVector().y / crosshair->getCrosshairVector().x) * 180 / 3.14);
         powerMeter.setPosition(currentUnit->getPosition());
         window.draw(powerMeter);
@@ -172,13 +181,16 @@ void GameWorld::draw(sf::RenderWindow& window)
     window.draw(*currentWeaponInHands);
 }
 
-void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
+void GameWorld::keyPressedEvent(sf::Keyboard::Key key, float deltaTime)
 {
     if (terrain.getPixel(currentUnit->getBottomCoordinates()) == sf::Color::Transparent
         && terrain.getPixel(currentUnit->getLeftBottomCoordinates()) == sf::Color::Transparent &&
         terrain.getPixel(currentUnit->getRightBottomCoordinates()) == sf::Color::Transparent)
     {
-
+        return;
+    }
+    if (gameState == GameState::consequences)
+    {
         return;
     }
     if (key == sf::Keyboard::D)
@@ -221,6 +233,8 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
     {
         if (gameState == GameState::unitWalking)
         {
+            if (currentUnit->getState() == UnitState::walking)
+                currentUnit->idle(deltaTime);
             gameState = GameState::lookingAround;
             view.setSize(2560, 1720);
         }
@@ -232,28 +246,16 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
     }
     if (key == sf::Keyboard::Space)
     {
+        if (currentUnit->getState() != UnitState::idle)
+            return;
         if (gameState == GameState::unitWalking)
             gameState = GameState::unitAiming;
         if (gameState == GameState::unitAiming)
-            countShootPower();
+            countShootPower(deltaTime);
     }
     if (key == sf::Keyboard::Num1)
     {
         playerVector[currentPlayerID]->setCurrentWeaponID(0);
-    }
-    if (key == sf::Keyboard::Q)
-    {
-        if (currentUnit->getIsFaceRight())
-            currentUnit->jumpBackwards();
-        else
-            currentUnit->jumpForward();
-    }
-    if (key == sf::Keyboard::E)
-    {
-        if (currentUnit->getIsFaceRight())
-            currentUnit->jumpForward();
-        else
-            currentUnit->jumpBackwards();
     }
     if (key == sf::Keyboard::W)
     {
@@ -267,6 +269,11 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
         if (crosshair->getCrosshairVector().x > 0)
             currentUnit->setIsFaceRight(true);
         crosshair->increaseSpeed();
+
+        if (crosshair->getCrosshairVector().x < 0)
+            currentWeaponInHands->setScale(-1, 1);
+        else
+            currentWeaponInHands->setScale(1, 1);
     }
     if (key == sf::Keyboard::S)
     {
@@ -280,12 +287,25 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key)
         if (crosshair->getCrosshairVector().x > 0)
             currentUnit->setIsFaceRight(true);
         crosshair->increaseSpeed();
+
+        if (crosshair->getCrosshairVector().x < 0)
+            currentWeaponInHands->setScale(-1, 1);
+        else
+            currentWeaponInHands->setScale(1, 1);
     }
 
 }
 
-void GameWorld::keyReleasedEvent(sf::Keyboard::Key key)
+void GameWorld::keyReleasedEvent(sf::Keyboard::Key key, float deltaTime)
 {
+    if (key == sf::Keyboard::Escape)
+    {
+        gameState = GameState::shuttingDown;
+    }
+    if (gameState == GameState::consequences)
+    {
+        return;
+    }
     if (gameState == GameState::lookingAround)
         return;
     if (key == sf::Keyboard::D || key == sf::Keyboard::A)
@@ -300,7 +320,31 @@ void GameWorld::keyReleasedEvent(sf::Keyboard::Key key)
     }
     if (key == sf::Keyboard::Space)
     {
+        if (currentUnit->getState() != UnitState::idle)
+            return;
         shoot();
+    }
+    if (key == sf::Keyboard::Q)
+    {
+        if (abs(currentUnit->getMomentum().x) > 1 || abs(currentUnit->getMomentum().y) > 1)
+        {
+            return;
+        }
+        if (currentUnit->getIsFaceRight())
+            currentUnit->jumpBackwards();
+        else
+            currentUnit->jumpForward();
+    }
+    if (key == sf::Keyboard::E)
+    {
+        if (abs(currentUnit->getMomentum().x) > 1 || abs(currentUnit->getMomentum().y) > 1)
+        {
+            return;
+        }
+        if (currentUnit->getIsFaceRight())
+            currentUnit->jumpForward();
+        else
+            currentUnit->jumpBackwards();
     }
 }
 
@@ -309,13 +353,24 @@ void GameWorld::newTurn()
     currentPlayerID++;
     if (currentPlayerID >= playerVector.size())
         currentPlayerID = 0;
+    while(playerVector[currentPlayerID]->getIsDefeated())
+    {
+        currentPlayerID++;
+        if (currentPlayerID >= playerVector.size())
+            currentPlayerID = 0;
+    }
     playerVector[currentPlayerID]->setNextCurrentUnit();
     if (playerVector[currentPlayerID]->getIsDefeated() == true)
         newTurn();
     currentUnit = playerVector[currentPlayerID]->getCurrentUnit();
+    crosshair->clear(currentUnit->getIsFaceRight());
+    if (currentUnit->getIsFaceRight())
+        currentWeaponInHands->setScale(1,1);
+    else
+        currentWeaponInHands->setScale(-1,1);
 }
 
-void GameWorld::checkGravityAndCollision()
+void GameWorld::checkGravityAndCollision(float deltaTime)
 {
     if (gameState == GameState::projectileFlying)
     {
@@ -334,7 +389,7 @@ void GameWorld::checkGravityAndCollision()
                             + distanceVector.y * distanceVector.y);
                     if (distance < projectile->getExplosionRadius() + 50)
                     {
-                        player->getUnit(i)->takeDamage(distanceVector / distance * 10.f
+                        player->getUnit(i)->takeDamage(distanceVector * 30.f / distance
                                                          , projectile->getDamage() / (distance / 10.f));
                     }
                 }
@@ -350,8 +405,7 @@ void GameWorld::checkGravityAndCollision()
             projectile->fall(deltaTime, gravity);
         }
         if (projectile->getPosition().x > terrain.getTerrainMaxX() ||
-            projectile->getPosition().x < terrain.getSpritePostition().x||
-            projectile->getPosition().y > 2990)
+            projectile->getPosition().x < terrain.getSpritePostition().x)
         {
             delete projectile;
             gameState = GameState::consequences;
@@ -370,11 +424,9 @@ void GameWorld::checkGravityAndCollision()
             {
                 player->getUnit(i)->fall(deltaTime,gravity);
             }
-            if (terrain.getPixel(player->getUnit(i)->getBottomCoordinates()) != sf::Color::Transparent
-            && player->getUnit(i)->getState() != UnitState::walking)
-            {
+            else if (player->getUnit(i)->getMomentum().y >= 0
+            && player->getUnit(i)->getState() != UnitState::walking && player->getUnit(i)->getMomentum().x != 0)
                 player->getUnit(i)->frictionForce();
-            }
             while ((terrain.getPixel(player->getUnit(i)->getBottomCoordinates()) != sf::Color::Transparent))
             {
                 player->getUnit(i)->pushUpFromTexture(deltaTime);
@@ -412,11 +464,11 @@ void GameWorld::shoot()
     gameState = GameState::projectileFlying;
 }
 
-void GameWorld::countShootPower()
+void GameWorld::countShootPower(float deltaTime)
 {
-    if (shootPower < 0.02)
+    if (shootPower < 0.1)
     {
-        shootPower += deltaTime / 15.f;
+        shootPower += deltaTime / 20.f;
     }
 }
 
@@ -430,7 +482,7 @@ void GameWorld::analisePlayers()
             notDefeatedCount++;
     }
     if (notDefeatedCount == 1)
-        std::cout << "KEK";
+        gameState = GameState::shuttingDown;
 }
 
 void GameWorld::spawnUnit(Unit* unit)
@@ -441,4 +493,9 @@ void GameWorld::spawnUnit(Unit* unit)
         coordinates = sf::Vector2f(rand() % 6000 + 1000, 2800);
     }
     unit->setPosition(coordinates);
+}
+
+GameState GameWorld::getGameState()
+{
+    return gameState;
 }

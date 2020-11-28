@@ -100,9 +100,9 @@ void Unit::jumpForward()
 {
     sf::Vector2f movement;
     if (isFaceRight)
-        movement = sf::Vector2f(4, -2);
+        movement = sf::Vector2f(15, -8);
     else
-        movement = sf::Vector2f(-4, -2);
+        movement = sf::Vector2f(-15, -8);
     addVectorToMomentum(movement);
 }
 
@@ -110,9 +110,9 @@ void Unit::jumpBackwards()
 {
     sf::Vector2f movement;
     if (isFaceRight)
-        movement = sf::Vector2f(-2, -4);
+        movement = sf::Vector2f(-8, -15);
     else
-        movement = sf::Vector2f(2, -4);
+        movement = sf::Vector2f(8, -15);
     addVectorToMomentum(movement);
 }
 

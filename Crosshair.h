@@ -19,7 +19,7 @@ public:
     ~Crosshair();
     void move(float deltaTime, bool isClockwise);
     void draw(sf::RenderWindow& window, sf::Vector2f center);
-    void clear(sf::Vector2f centerCoordinates);
+    void clear(bool isright);
     sf::Vector2f getCrosshairVector();
     void reverseCrosshair();
     void increaseSpeed();

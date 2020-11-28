@@ -53,6 +53,7 @@ public:
     void frictionForce();
     bool getIsOutOfBounds();
     void setOutOfBounds(bool newIsOutOfBounds);
+    void nullifyMomentum();
 };
 
 

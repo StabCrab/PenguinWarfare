@@ -22,7 +22,7 @@ Crosshair::~Crosshair()
 
 void Crosshair::move(float deltaTime, bool isClockwise)
 {
-    deltaTime *= 70000 * speed;
+    deltaTime *= 40000 * speed;
     if (isClockwise)
     {
         if (crosshairVector.x >= 0 && crosshairVector.y < 0)
@@ -95,12 +95,16 @@ void Crosshair::draw(sf::RenderWindow& window, sf::Vector2f center)
     window.draw(crosshair);
 }
 
-void Crosshair::clear(sf::Vector2f centerCoordinates)
+void Crosshair::clear(bool isRight)
 {
-    crosshairVector = sf::Vector2f(centerCoordinates + sf::Vector2f(sqrt(RADIUS),0));
+    if (isRight)
+        crosshairVector = sf::Vector2f(RADIUS,0);
+    else
+        crosshairVector = sf::Vector2f(-RADIUS,0);
 }
 
-sf::Vector2f Crosshair::getCrosshairVector() {
+sf::Vector2f Crosshair::getCrosshairVector()
+{
     return crosshairVector;
 }
 
