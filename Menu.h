@@ -8,6 +8,7 @@
 
 #define NUMBER_OF_ITEMS 3
 #define NUMBER_OF_START_GAME_ITEMS 4
+#define NUMBER_OF_OPTIONS_ITEMS 1
 enum class MenuState
 {
     generalMenu = 0,
@@ -18,7 +19,7 @@ enum class MenuState
 };
 class Menu {
 public:
-    Menu(sf::Vector2u windowSize);
+    Menu(sf::RenderWindow& window, bool isFullscreen);
     ~Menu();
 
     void draw(sf::RenderWindow& window);
@@ -28,21 +29,30 @@ public:
 
     unsigned int getSelectedItemIndex();
 
+    bool getIsChangingStyle();
+
+    void setIsChanginsStyleFalse();
+
     void keyPressedEvent(sf::Keyboard::Key key);
     void keyReleasedEvent(sf::Keyboard::Key key);
 
     MenuState getMenuState();
 
-    unsigned int getNumberOfPlayers();
+    void setMenuState(MenuState state);
+
+    unsigned int getNumberOfPlayers() const;
 
 private:
-    bool isDone = false;
+    bool isChangingStyle;
+    bool isDone;
     unsigned int selectedItemIndex;
     sf::Font font;
-    sf::Text* menuItems;
-    sf::Text* startGameItems;
+    sf::Text menuItems[NUMBER_OF_ITEMS];
+    sf::Text startGameItems[NUMBER_OF_START_GAME_ITEMS];
+    sf::Text optionsItems[NUMBER_OF_OPTIONS_ITEMS];
     MenuState menuState;
-    unsigned int numberOfTeams = 2;
+    unsigned int numberOfTeams;
+    sf::View view;
 };
 
 

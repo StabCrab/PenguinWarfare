@@ -28,7 +28,6 @@ GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
     powerMeter.setTexture(powerMeterTexture);
     powerMeter.setOrigin(0, 40);
     view.setSize(1920, 1080);
-    rand_r(time(nullptr));
     for (int i = 0; i < numberOfPlayers; i++)
     {
         if (i == 0)
@@ -198,7 +197,7 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key, float deltaTime)
         if (gameState == GameState::lookingAround)
         {
             if (view.getCenter().x < 7000)
-                view.setCenter(sf::Vector2f(view.getCenter().x + deltaTime * 10000.f, view.getCenter().y));
+                view.setCenter(sf::Vector2f(view.getCenter().x + deltaTime * 5000.f, view.getCenter().y));
         }
         if (gameState != GameState::unitWalking)
             return;
@@ -217,7 +216,7 @@ void GameWorld::keyPressedEvent(sf::Keyboard::Key key, float deltaTime)
         if (gameState == GameState::lookingAround)
         {
             if (view.getCenter().x > 1000)
-                view.setCenter(sf::Vector2f(view.getCenter().x - deltaTime * 10000.f, view.getCenter().y));
+                view.setCenter(sf::Vector2f(view.getCenter().x - deltaTime * 5000.f, view.getCenter().y));
         }
         if (gameState != GameState::unitWalking)
             return;

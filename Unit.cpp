@@ -35,6 +35,8 @@ void Unit::idle(float deltaTime)
 
 void Unit::walk(float deltaTime, bool isGoingRight)
 {
+    if (deltaTime > 1)
+        return;
     sf::Vector2f movement(0,0);
     if(isGoingRight)
     {
@@ -100,9 +102,9 @@ void Unit::jumpForward()
 {
     sf::Vector2f movement;
     if (isFaceRight)
-        movement = sf::Vector2f(15, -8);
+        movement = sf::Vector2f(12, -6);
     else
-        movement = sf::Vector2f(-15, -8);
+        movement = sf::Vector2f(-12, -6);
     addVectorToMomentum(movement);
 }
 
@@ -110,9 +112,9 @@ void Unit::jumpBackwards()
 {
     sf::Vector2f movement;
     if (isFaceRight)
-        movement = sf::Vector2f(-8, -15);
+        movement = sf::Vector2f(-6, -12);
     else
-        movement = sf::Vector2f(8, -15);
+        movement = sf::Vector2f(6, -12);
     addVectorToMomentum(movement);
 }
 

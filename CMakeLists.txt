@@ -11,7 +11,6 @@ add_executable(PenguinWarfare main.cpp
         Entity.h Entity.cpp
         Unit.h Unit.cpp
         Weapon.h Weapon.cpp
-        InputHandler.h InputHandler.cpp
         Animation.h Animation.cpp
         Projectile.h Projectile.cpp
         Crosshair.h Crosshair.cpp)
