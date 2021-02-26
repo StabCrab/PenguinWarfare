@@ -24,7 +24,7 @@ class GameWorld
 private:
     Terrain terrain;
     sf::View view;
-    const float gravity = 10;
+    const float gravity = 10.f;
     std::vector<Player*> playerVector;
     Unit* currentUnit;
     sf::RectangleShape* currentWeaponInHands;
