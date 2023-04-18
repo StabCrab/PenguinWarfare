@@ -7,8 +7,8 @@
 #include <SFML/Graphics.hpp>
 #include "Animation.h"
 #include "Entity.h"
+#include "Weapon.h"
 #include "string.h"
-
 enum class UnitState
 {
     idle = 0,
@@ -30,33 +30,21 @@ public:
     void draw(sf::RenderWindow& window, float deltaTime);
     bool getIsFaceRight();
     void setIsFaceRight(bool isFaceRight);
+    void takeDamage(sf::Vector2f blowImpulse, unsigned int damage);
     UnitState getState();
     void makeUnitOutOfBounds();
     bool getIsOutOfBounds();
-    void jumpForward(float deltaTime);
-    void jumpBackwards(float deltaTime);
-    sf::Vector2f open();
-    bool getHasKey();
-    bool giveKey();
-
-    void goToChest();
-    void goToDoor();
-    void stopGoingToChest();
-    void stopGoingToDoor();
-
-    bool getGoingToChest();
-    bool getGoingToDoor();
+    void jumpForward();
+    void jumpBackwards();
 private:
     bool isOutOfBounds = false;
+    int health = 100;
+    sf::Text info;
     Animation animation;
     float speed;
     bool isFaceRight;
     UnitState state;
-    sf::Text coords;
-    bool hasKey = false;
-
-    bool isGoingToChest = false;
-    bool isGoingToDoor = false;
+    Weapon* weaponInHands;
 };
 
 

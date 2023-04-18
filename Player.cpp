@@ -4,13 +4,13 @@
 
 #include "Player.h"
 
-Player::Player(sf::Color color,sf::Font* font)
+Player::Player(sf::Color color, const int weaponCount[WEAPONS_COUNT],sf::Font* font)
 {
     this->color = color;
     for(int i = 0; i < UNIT_COUNTER; i++)
     {
         units[i] = new Unit("PenguinRed.png", sf::Vector2f (100, 150), 2.5,
-                            sf::Vector2u(3,9), 0.25, 500, font, color);
+                            sf::Vector2u(3,9), 0.25, 100, font, color);
     }
 //    for (int i = 0; i < WEAPONS_COUNT; i++)
 //    {
@@ -35,6 +35,16 @@ Unit* Player::getUnit(int number) {
     return units[number];
 }
 
+void Player::setNextCurrentUnit()
+{
+    currentUnitID++;
+    if (currentUnitID == UNIT_COUNTER)
+        currentUnitID = 0;
+    if (units[currentUnitID]->getState() == UnitState::dead)
+    {
+        setNextCurrentUnit();
+    }
+}
 
 Unit *Player::getCurrentUnit() {
     return units[currentUnitID];

@@ -7,105 +7,84 @@
 #include <cmath>
 #include <memory>
 #include <utility>
-#include <sstream>
 #include "iostream"
 #include "cstdlib"
 #include "ctime"
 
 GameWorld::GameWorld(sf::RenderWindow& window, std::string level,
-                     const unsigned int numberOfPlayers)
+                     const unsigned int numberOfPlayers, const int weaponCount[WEAPONS_COUNT])
 {
     if (!font.loadFromFile("arial.ttf"))
     {
         throw std::runtime_error("Cannot find font"); //Throw exception if cannot find font
     }
-    text.setFont(font);
-    text.setFillColor(sf::Color::Yellow);
-    text.setCharacterSize(24);
-    text.setStyle(sf::Text::Bold);
+    weapons[0] = new Weapon("Bazooka.png", "Rocket.png",
+                            200, 100.f, 1.f,
+                            sf::Vector2f(40,40), sf::Vector2f(100, 50));
     terrain.setTexture(std::move(level));
+    powerMeterTexture = new sf::Texture;
+    powerMeter.setSize(sf::Vector2f(200,100));
+    powerMeterTexture->loadFromFile("PowerMeter.png");
+    powerMeter.setTexture(powerMeterTexture);
+    powerMeter.setOrigin(0, 40);
     view.setSize(1920, 1080);
     for (int i = 0; i < numberOfPlayers; i++)
     {
         if (i == 0)
         {
-            playerVector.push_back(new Player(sf::Color::Red, &font));
+            playerVector.push_back(new Player(sf::Color::Red, weaponCount, &font));
+            //playerVector[0]->getUnits()[0].setPosition(sf::Vector2f(5000, 2800));
             spawnUnit(playerVector[0]->getUnit(0));
+            spawnUnit(playerVector[0]->getUnit(1));
+            spawnUnit(playerVector[0]->getUnit(2));
+            spawnUnit(playerVector[0]->getUnit(3));
+        }
+        if (i == 1)
+        {
+            playerVector.push_back(new Player(sf::Color::Blue, weaponCount, &font));
+            //playerVector[1]->getUnits()[0].setPosition(sf::Vector2f(4000, 2800));
+            spawnUnit(playerVector[1]->getUnit(0));
+            spawnUnit(playerVector[1]->getUnit(1));
+            spawnUnit(playerVector[1]->getUnit(2));
+            spawnUnit(playerVector[1]->getUnit(3));
+        }
+        if (i == 2)
+        {
+            playerVector.push_back(new Player(sf::Color::Green, weaponCount, &font));
+            spawnUnit(playerVector[2]->getUnit(0));
+            spawnUnit(playerVector[2]->getUnit(1));
+            spawnUnit(playerVector[2]->getUnit(2));
+            spawnUnit(playerVector[2]->getUnit(3));
+        }
+        if (i == 3)
+        {
+            playerVector.push_back(new Player(sf::Color::Yellow, weaponCount, &font));
+            spawnUnit(playerVector[3]->getUnit(0));
+            spawnUnit(playerVector[3]->getUnit(1));
+            spawnUnit(playerVector[3]->getUnit(2));
+            spawnUnit(playerVector[3]->getUnit(3));
         }
     }
     currentUnit = playerVector[0]->getUnit(0);
     view.setCenter(currentUnit->getPosition());
-    chest = new Entity("chest.png", sf::Vector2f(80, 80), 5);
-    chest->setPosition(sf::Vector2f(3147, 1511));
-    door = new Entity("door.png", sf::Vector2f(240,240), 5);
-    door->setPosition(sf::Vector2f(4595, 2100));
+    crosshair = new Crosshair("Crosshair.png", view.getCenter());
+    currentWeaponInHands = new sf::RectangleShape;
+    currentWeaponInHands->setSize(weapons[playerVector[0]->getCurrentWeaponID()]->getWeaponSize());
+    currentWeaponInHands->setTexture(weapons[playerVector[0]->getCurrentWeaponID()]->getWeaponTexture());
+    currentWeaponInHands->setOrigin(currentWeaponInHands->getSize().x / 2, currentWeaponInHands->getSize().y / 4);
 }
 
 GameWorld::~GameWorld()
 {
+    delete weapons[0];
     for (auto& player : playerVector)
         delete player;
+    delete powerMeterTexture;
+    delete crosshair;
 }
 
 void GameWorld::draw(sf::RenderWindow& window, float deltaTime)
 {
-    this->deltaTime = deltaTime;
-    text.setString(s);
-    if (isCommandsLeft && currentUnit->getState() == UnitState ::idle &&(terrain.getPixel(currentUnit->getBottomCoordinates()) != sf::Color::Transparent
-                                                                        || terrain.getPixel(currentUnit->getLeftBottomCoordinates()) != sf::Color::Transparent ||
-                                                                        terrain.getPixel(currentUnit->getRightBottomCoordinates()) != sf::Color::Transparent))
-    {
-        Efunc();
-    }
-
-
-    door->drawBody(window);
-    chest->drawBody(window);
-    clock_t a = clock();
-    if (until > a)
-    {
-        movement(isGoingLeft);
-    }
-    else if (currentUnit->getGoingToChest())
-    {
-        if (chest->getPosition().x < currentUnit->getPosition().x)
-        {
-            movement(true);
-        }
-        else if (chest->getPosition().x > currentUnit->getPosition().x)
-        {
-            movement(false);
-        }
-
-        if (std::abs(currentUnit->getPosition().x - chest->getPosition().x) < 50 || std::abs(chest->getPosition().y - currentUnit->getPosition().y) > 200)
-        {
-            currentUnit->stopGoingToChest();
-        }
-    }
-    else if (currentUnit->getGoingToDoor())
-    {
-        if (door->getPosition().x < currentUnit->getPosition().x)
-        {
-            movement(true);
-        }
-        else if (door->getPosition().x > currentUnit->getPosition().x)
-        {
-            movement(false);
-        }
-
-        if (std::abs(currentUnit->getPosition().x - door->getPosition().x) < 50  || std::abs(door->getPosition().y - currentUnit->getPosition().y) > 200)
-        {
-            currentUnit->stopGoingToDoor();
-        }
-    }
-
-    else
-    {
-        if (currentUnit->getState() != UnitState::idle)
-        {
-            currentUnit->idle(deltaTime);
-        }
-    }
     if (gameState == GameState::shuttingDown)
         return;
     if (deltaTime > 1)
@@ -128,155 +107,191 @@ void GameWorld::draw(sf::RenderWindow& window, float deltaTime)
     if (gameState == GameState::unitWalking)
     {
         view.setCenter(currentUnit->getPosition());
+        crosshair->draw(window, view.getCenter());
+    }
+    else if (gameState == GameState::projectileFlying)
+    {
+        projectile->getBody().setRotation(90.f);
+        projectile->moveBody();
+        if (projectile->getMomentum().x < 0)
+        {
+            projectile->reverse();
+        }
+        projectile->setRotation(atanf(projectile->getMomentum().y / projectile->getMomentum().x) * 180 / 3.14);
+        if (projectile->getPosition().y < 1040)
+        {
+            if (projectile->getIsOutOfBounds())
+                view.setCenter(sf::Vector2f(projectile->getPseudoCoordinates().x, 1040));
+            else
+            {
+                view.setCenter(sf::Vector2f(projectile->getPosition().x, 1040));
+                projectile->drawBody(window);
+            }
+        }
+        else
+        {
+            view.setCenter(projectile->getPosition());
+            projectile->drawBody(window);
+        }
+    }
+    else if (gameState == GameState::consequences)
+    {
+        bool isAnyoneMoving = false;
+        for (auto& player : playerVector)
+        {
+            for (int i = 0; i < UNIT_COUNTER; i++)
+            {
+                if (player->getUnit(i)->getMomentum().x != 0
+                && player->getUnit(i)->getMomentum().y != 0
+                && player->getUnit(i)->getState() != UnitState::dead)
+                    isAnyoneMoving = true;
+            }
+        }
+        if (!isAnyoneMoving)
+        {
+            if (timer > 1)
+            {
+                analisePlayers();
+                newTurn();
+                if (gameState != GameState::shuttingDown)
+                    gameState = GameState::unitWalking;
+            }
+            else
+                timer += deltaTime;
+        }
+    }
+    else if (gameState== GameState::unitAiming)
+    {
+        if (currentUnit->getIsFaceRight())
+            powerMeter.setScale(shootPower * 15.f, shootPower * 15.f);
+        else
+            powerMeter.setScale(-shootPower * 15.f, shootPower * 15.f);
+        powerMeter.setRotation(atanf(crosshair->getCrosshairVector().y / crosshair->getCrosshairVector().x) * 180 / 3.14);
+        powerMeter.setPosition(currentUnit->getPosition());
+        window.draw(powerMeter);
     }
     window.setView(view);
 
-
-    text.setPosition(view.getCenter().x - s.size() * 8, view.getCenter().y - 500);
-    window.draw(text);
     currentUnit->draw(window, deltaTime);
     currentUnit->moveBody();
+
+    currentWeaponInHands->setPosition(currentUnit->getPosition());
+    currentWeaponInHands->setRotation(atanf(crosshair->getCrosshairVector().y / crosshair->getCrosshairVector().x) * 180 / 3.14);
+    window.draw(*currentWeaponInHands);
 }
 
 void GameWorld::keyPressedEvent(sf::Keyboard::Key key, float deltaTime)
 {
+    if (terrain.getPixel(currentUnit->getBottomCoordinates()) == sf::Color::Transparent
+        && terrain.getPixel(currentUnit->getLeftBottomCoordinates()) == sf::Color::Transparent &&
+        terrain.getPixel(currentUnit->getRightBottomCoordinates()) == sf::Color::Transparent)
+    {
+        return;
+    }
     if (gameState == GameState::consequences)
     {
         return;
     }
-    if (s == "Victory" || s =="Key acquired")
-        s.clear();
-    switch (key)
+    if (key == sf::Keyboard::D)
     {
-        case sf::Keyboard::Q:
-            s+='Q';
-            break;
-        case sf::Keyboard::W:
-            s+='W';
-            break;
-        case sf::Keyboard::E:
-            s+='E';
-            break;
-        case sf::Keyboard::R:
-            s+='R';
-            break;
-        case sf::Keyboard::T:
-            s+= 'T';
-            break;
-        case sf::Keyboard::Y:
-            s+= 'Y';
-            break;
-        case sf::Keyboard::U:
-            s+= 'U';
-            break;
-        case sf::Keyboard::I:
-            s+= 'I';
-            break;
-        case sf::Keyboard::O:
-            s+= 'O';
-            break;
-        case sf::Keyboard::P:
-            s+='P';
-            break;
-        case sf::Keyboard::A:
-            s+='A';
-            break;
-        case sf::Keyboard::S:
-            s+='S';
-            break;
-        case sf::Keyboard::D:
-            s+='D';
-            break;
-        case sf::Keyboard::F:
-            s+= 'F';
-            break;
-        case sf::Keyboard::G:
-            s+= 'G';
-            break;
-        case sf::Keyboard::H:
-            s+= 'H';
-            break;
-        case sf::Keyboard::J:
-            s+= 'J';
-            break;
-        case sf::Keyboard::K:
-            s+= 'K';
-            break;
-        case sf::Keyboard::L:
-            s+= 'L';
-            break;
-        case sf::Keyboard::Z:
-            s+= 'Z';
-            break;
-        case sf::Keyboard::X:
-            s+= 'X';
-            break;
-        case sf::Keyboard::C:
-            s+= 'C';
-            break;
-        case sf::Keyboard::V:
-            s+='V';
-            break;
-        case sf::Keyboard::B:
-            s+='B';
-            break;
-        case sf::Keyboard::N:
-            s+='N';
-            break;
-        case sf::Keyboard::M:
-            s+='M';
-            break;
-        case sf::Keyboard::Num0:
-            s+= '0';
-            break;
-        case sf::Keyboard::Num1:
-            s+= '1';
-            break;
-        case sf::Keyboard::Num2:
-            s+= '2';
-            break;
-        case sf::Keyboard::Num3:
-            s+= '3';
-            break;
-        case sf::Keyboard::Num4:
-            s+='4';
-            break;
-        case sf::Keyboard::Num5:
-            s+='5';
-            break;
-        case sf::Keyboard::Num6:
-            s+='6';
-            break;
-        case sf::Keyboard::Num7:
-            s+='7';
-            break;
-        case sf::Keyboard::Num8:
-            s+='8';
-            break;
-        case sf::Keyboard::Num9:
-            s+='9';
-            break;
-        case sf::Keyboard::Space:
-            s+=' ';
-            break;
-        case sf::Keyboard::Enter:
+        if (gameState == GameState::lookingAround)
         {
-            if (until == INT_MAX)
-            {
-                Stop();
-            }
-            remain = s;
-            s.clear();
-            isCommandsLeft = true;
-            break;
+            if (view.getCenter().x < 7000)
+                view.setCenter(sf::Vector2f(view.getCenter().x + deltaTime * 5000.f, view.getCenter().y));
         }
-        case sf::Keyboard::BackSpace:
-            if (!s.empty())
-                s.pop_back();
-            break;
+        if (gameState != GameState::unitWalking)
+            return;
+
+        currentUnit->walk(deltaTime, true);
+        if (crosshair->getCrosshairVector().x < 0)
+        {
+            crosshair->reverseCrosshair();
+            isDownClockwise = true;
+        }
+        currentWeaponInHands->setScale(1, 1);
+
     }
+    if (key == sf::Keyboard::A)
+    {
+        if (gameState == GameState::lookingAround)
+        {
+            if (view.getCenter().x > 1000)
+                view.setCenter(sf::Vector2f(view.getCenter().x - deltaTime * 5000.f, view.getCenter().y));
+        }
+        if (gameState != GameState::unitWalking)
+            return;
+        currentUnit->walk(deltaTime, false);
+        if (crosshair->getCrosshairVector().x > 0)
+        {
+            crosshair->reverseCrosshair();
+            isDownClockwise = false;
+        }
+        currentWeaponInHands->setScale(-1, 1);
+    }
+    if (key == sf::Keyboard::Enter)
+    {
+        if (gameState == GameState::unitWalking)
+        {
+            if (currentUnit->getState() == UnitState::walking)
+                currentUnit->idle(deltaTime);
+            gameState = GameState::lookingAround;
+            view.setSize(2560, 1720);
+        }
+        else if (gameState == GameState::lookingAround)
+        {
+            view.setSize(1920, 1080);
+            gameState = GameState::unitWalking;
+        }
+    }
+    if (key == sf::Keyboard::Space)
+    {
+        if (currentUnit->getState() != UnitState::idle)
+            return;
+        if (gameState == GameState::unitWalking)
+            gameState = GameState::unitAiming;
+        if (gameState == GameState::unitAiming)
+            countShootPower(deltaTime);
+    }
+    if (key == sf::Keyboard::Num1)
+    {
+        playerVector[currentPlayerID]->setCurrentWeaponID(0);
+    }
+    if (key == sf::Keyboard::W)
+    {
+        if (gameState == GameState::lookingAround)
+        {
+            return;
+        }
+        crosshair->move(deltaTime, !isDownClockwise);
+        if (crosshair->getCrosshairVector().x < 0)
+            currentUnit->setIsFaceRight(false);
+        if (crosshair->getCrosshairVector().x > 0)
+            currentUnit->setIsFaceRight(true);
+        crosshair->increaseSpeed();
 
+        if (crosshair->getCrosshairVector().x < 0)
+            currentWeaponInHands->setScale(-1, 1);
+        else
+            currentWeaponInHands->setScale(1, 1);
+    }
+    if (key == sf::Keyboard::S)
+    {
+        if (gameState == GameState::lookingAround)
+        {
+            return;
+        }
+        crosshair->move(deltaTime, isDownClockwise);
+        if (crosshair->getCrosshairVector().x < 0)
+            currentUnit->setIsFaceRight(false);
+        if (crosshair->getCrosshairVector().x > 0)
+            currentUnit->setIsFaceRight(true);
+        crosshair->increaseSpeed();
 
+        if (crosshair->getCrosshairVector().x < 0)
+            currentWeaponInHands->setScale(-1, 1);
+        else
+            currentWeaponInHands->setScale(1, 1);
+    }
 
 }
 
@@ -290,7 +305,46 @@ void GameWorld::keyReleasedEvent(sf::Keyboard::Key key, float deltaTime)
     {
         return;
     }
-
+    if (gameState == GameState::lookingAround)
+        return;
+    if (key == sf::Keyboard::D || key == sf::Keyboard::A)
+        currentUnit->idle(deltaTime);
+    if (key == sf::Keyboard::W || key == sf::Keyboard::S)
+    {
+        if (crosshair->getCrosshairVector().x > 0)
+            isDownClockwise = true;
+        if (crosshair->getCrosshairVector().x < 0)
+            isDownClockwise = false;
+        crosshair->clearSpeed();
+    }
+    if (key == sf::Keyboard::Space)
+    {
+        if (currentUnit->getState() != UnitState::idle)
+            return;
+        shoot();
+    }
+    if (key == sf::Keyboard::Q)
+    {
+        if (abs(currentUnit->getMomentum().x) > 1 || abs(currentUnit->getMomentum().y) > 1)
+        {
+            return;
+        }
+        if (currentUnit->getIsFaceRight())
+            currentUnit->jumpBackwards();
+        else
+            currentUnit->jumpForward();
+    }
+    if (key == sf::Keyboard::E)
+    {
+        if (abs(currentUnit->getMomentum().x) > 1 || abs(currentUnit->getMomentum().y) > 1)
+        {
+            return;
+        }
+        if (currentUnit->getIsFaceRight())
+            currentUnit->jumpForward();
+        else
+            currentUnit->jumpBackwards();
+    }
 }
 
 void GameWorld::newTurn()
@@ -304,11 +358,59 @@ void GameWorld::newTurn()
         if (currentPlayerID >= playerVector.size())
             currentPlayerID = 0;
     }
+    playerVector[currentPlayerID]->setNextCurrentUnit();
+    if (playerVector[currentPlayerID]->getIsDefeated() == true)
+        newTurn();
     currentUnit = playerVector[currentPlayerID]->getCurrentUnit();
+    crosshair->clear(currentUnit->getIsFaceRight());
+    if (currentUnit->getIsFaceRight())
+        currentWeaponInHands->setScale(1,1);
+    else
+        currentWeaponInHands->setScale(-1,1);
 }
 
 void GameWorld::checkGravityAndCollision(float deltaTime)
 {
+    if (gameState == GameState::projectileFlying)
+    {
+        if (terrain.getPixel(projectile->getPosition()) != sf::Color::Transparent)
+        {
+            sf::Vector2f distanceVector;
+            float distance;
+            for (auto& player : playerVector)
+            {
+                for (int i = 0; i < UNIT_COUNTER; i++)
+                {
+                    if (player->getUnit(i)->getIsOutOfBounds())
+                        continue;
+                    distanceVector =  player->getUnit(i)->getPosition() - projectile->getPosition();
+                    distance = sqrt(distanceVector.x * distanceVector.x
+                            + distanceVector.y * distanceVector.y);
+                    if (distance < projectile->getExplosionRadius() + 50)
+                    {
+                        player->getUnit(i)->takeDamage(distanceVector * 30.f / distance
+                                                         , projectile->getDamage() / (distance / 10.f));
+                    }
+                }
+            }
+            terrain.boom(projectile->getPosition(),
+                         projectile->getExplosionRadius());
+            delete projectile;
+            timer = 0;
+            gameState = GameState::consequences;
+        }
+        else
+        {
+            projectile->fall(deltaTime, gravity);
+        }
+        if (projectile->getPosition().x > terrain.getTerrainMaxX() ||
+            projectile->getPosition().x < terrain.getSpritePostition().x)
+        {
+            delete projectile;
+            gameState = GameState::consequences;
+        }
+
+    }
     for (auto& player : playerVector)
     {
         for (int i = 0; i < UNIT_COUNTER; i++)
@@ -348,224 +450,51 @@ void GameWorld::checkGravityAndCollision(float deltaTime)
 }
 
 
+void GameWorld::shoot()
+{
+    if (gameState == GameState::projectileFlying)
+        return;
+    projectile = new Projectile(weapons[0]->getProjectileTexture(), weapons[0]->getProjectileSize(),
+                                weapons[0]->getMassOfProjectile(),  true,
+                                weapons[0]->getDamage(), weapons[0]->getExplosionRadius());
+    projectile->setPosition(currentUnit->getPosition());
+    projectile->addVectorToMomentum(crosshair->getCrosshairVector() * shootPower);
+    shootPower = 0;
+    gameState = GameState::projectileFlying;
+}
 
+void GameWorld::countShootPower(float deltaTime)
+{
+    if (shootPower < 0.1)
+    {
+        shootPower += deltaTime / 20.f;
+    }
+}
+
+void GameWorld::analisePlayers()
+{
+    short int notDefeatedCount = 0;
+    for (auto& player : playerVector)
+    {
+        player->analiseSituation();
+        if (player->getIsDefeated() == false)
+            notDefeatedCount++;
+    }
+    if (notDefeatedCount == 1)
+        gameState = GameState::shuttingDown;
+}
 
 void GameWorld::spawnUnit(Unit* unit)
 {
-    sf::Vector2f coordinates(1000, 2000);
+    sf::Vector2f coordinates(rand() % 6000 + 1000, 2800);
+    while (terrain.getPixel(coordinates) == sf::Color::Transparent)
+    {
+        coordinates = sf::Vector2f(rand() % 6000 + 1000, 2800);
+    }
     unit->setPosition(coordinates);
 }
 
 GameState GameWorld::getGameState()
 {
     return gameState;
-}
-
-void GameWorld::parse()
-{
-    Efunc();
-    s.clear();
-}
-
-void GameWorld::movement(bool isLeft)
-{
-    if (isLeft)
-    {
-        currentUnit->walk(deltaTime, false);
-    }
-    else
-    {
-        currentUnit->walk(deltaTime, true);
-    }
-}
-
-bool GameWorld::isNumber(std::string string) {
-    for (char const &ch : string)
-    {
-        if (std::isdigit(ch) == 0)
-            return false;
-    }
-    return true;
-}
-
-void GameWorld::Efunc()
-{
-    currentUnit->stopGoingToChest();
-    currentUnit->stopGoingToDoor();
-    scan();
-    if (curWord == "STOP")
-    {
-        Stop();
-    }
-    if (curWord == "GO")
-    {
-        scan();
-        if (curWord == "RIGHT" || curWord == "LEFT")
-        {
-            Dir();
-        }
-        else if (curWord == "TO")
-        {
-            Item();
-        }
-    }
-    if (curWord == "JUMP" || curWord == "TURN")
-    {
-        scan();
-        Dir();
-    }
-    if (curWord == "OPEN")
-    {
-        Item();
-    }
-    if (curWord == "DOIT")
-    {
-        remain = "GO RIGHT 2 TURN LEFT JUMP RIGHT GO LEFT 2 TURN RIGHT JUMP LEFT GO RIGHT 2 TURN LEFT JUMP RIGHT TURN RIGHT JUMP RIGHT GO TO CHEST OPEN CHEST GO RIGHT 3  GO TO DOOR OPEN DOOR";
-    }
-    if (remain.empty())
-        isCommandsLeft = false;
-}
-
-void GameWorld::Stop()
-{
-    until = -2;
-}
-
-void GameWorld::scan()
-{
-    prevWord = curWord;
-    if (remain.empty())
-    {
-        curWord = "";
-    }
-    int i = remain.find(' ');
-    std::string a;
-    if (i == -1)
-    {
-        curWord = remain;
-        remain.clear();
-    }
-    else
-    {
-        curWord =  remain.substr(0,i);
-        remain = remain.substr(i + 1);
-    }
-}
-
-
-
-void GameWorld::Dir()
-{
-    if (curWord == "RIGHT")
-    {
-        if (prevWord == "GO")
-        {
-            scan();
-            if (curWord.empty())
-            {
-                until = INT_MAX;
-            }
-            else
-            {
-                num();
-            }
-            isGoingLeft = false;
-        }
-        else if (prevWord == "JUMP")
-        {
-            if (currentUnit->getIsFaceRight())
-            {
-                currentUnit->jumpForward(deltaTime);
-            }
-            else
-            {
-                currentUnit->jumpBackwards(deltaTime);
-            }
-        }
-        else if (prevWord == "TURN")
-        {
-            currentUnit->walk(deltaTime, true);
-        }
-    }
-    else if (curWord == "LEFT")
-    {
-        if (prevWord == "GO")
-        {
-            scan();
-            if (curWord.empty())
-            {
-                until = INT_MAX;
-            }
-            else
-            {
-                num();
-            }
-            isGoingLeft = true;
-        }
-        else if (prevWord == "JUMP")
-        {
-            if (currentUnit->getIsFaceRight())
-            {
-                currentUnit->jumpBackwards(deltaTime);
-            }
-            else
-            {
-                currentUnit->jumpForward(deltaTime);
-            }
-        }
-        else if (prevWord == "TURN")
-        {
-            currentUnit->walk(deltaTime, false);
-        }
-    }
-}
-
-void GameWorld::Item()
-{
-    scan();
-    if (curWord == "CHEST")
-    {
-        if (prevWord == "OPEN")
-        {
-            if (std::abs(currentUnit->open().x - chest->getPosition().x) < 100 && std::abs(currentUnit->open().y - chest->getPosition().y) < 100)
-            {
-                currentUnit->giveKey();
-                s = "Key acquired";
-            }
-        }
-        else if (prevWord == "TO")
-        {
-            if (std::abs(chest->getPosition().y - currentUnit->getPosition().y) < 100)
-            {
-                currentUnit->goToChest();
-            }
-        }
-    }
-    if (curWord == "DOOR")
-    {
-        if (prevWord == "OPEN")
-        {
-            if (std::abs(currentUnit->open().x - door->getPosition().x) < 100 && std::abs(currentUnit->open().y - door->getPosition().y) < 100 && currentUnit->getHasKey())
-                s = "Victory";
-        }
-        else if (prevWord == "TO")
-        {
-            if (std::abs(door->getPosition().y - currentUnit->getPosition().y) < 100)
-            {
-                currentUnit->goToDoor();
-            }
-        }
-    }
-}
-
-void GameWorld::num()
-{
-    if (isNumber(curWord))
-    {
-        until = clock() + std::stoi(curWord) * 500;
-    }
-    else
-    {
-        until = INT_MAX;
-    }
 }
