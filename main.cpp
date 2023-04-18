@@ -15,7 +15,9 @@ int main()
     sf::RenderWindow window(sf::VideoMode(width, height),
                             "Penguin Warfare", sf::Style::Fullscreen);
     window.setVerticalSyncEnabled(true);
+    window.setFramerateLimit(60);
     window.setTitle("Penguin Warfare");
+
 
     Menu* menu = new Menu(window, isFullscreen);
     GameWorld* gameWorld;
@@ -87,9 +89,7 @@ int main()
             {
                 clock.restart();
                 currentClass = CurrentClass::game;
-                int array[1];
-                array[0] = 999;
-                gameWorld = new GameWorld(window, "terrainB.png",menu->getNumberOfPlayers(), array);
+                gameWorld = new GameWorld(window, "TerrainT.png",menu->getNumberOfPlayers());
                 delete menu;
                 currentClass = CurrentClass::game;
             }

@@ -38,9 +38,6 @@ Menu::Menu(sf::RenderWindow& window, bool isFullscreen)
     }
 
     startGameItems[0].setString("Play");
-    startGameItems[1].setString("Number of teams " + std::to_string(numberOfTeams));
-    startGameItems[2].setString("Choose the number of weapons (WIP)");
-    startGameItems[3].setString("Choose map (WIP)");
 
     for (int i = 0; i < NUMBER_OF_OPTIONS_ITEMS; ++i)
     {

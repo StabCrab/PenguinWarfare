@@ -12,11 +12,16 @@ Unit::Unit(const std::string& texturePath,sf::Vector2f sizeUnit, float mass,
 {
     state = UnitState::idle;
     isFaceRight = true;
-    info.setFont(*font);
-    info.setFillColor(color);
-    info.setString(std::to_string(health));
-    info.setPosition(getTopCoordinates());
-    info.setOrigin(25.f,20.f);
+
+    if (!font->loadFromFile("arial.ttf"))
+    {
+        throw std::runtime_error("Cannot find font"); //Throw exception if cannot find font
+    }
+
+    coords.setFont(*font);
+    coords.setFillColor(sf::Color::Yellow);
+    coords.setCharacterSize(24);
+    coords.setStyle(sf::Text::Bold);
 }
 
 Unit::~Unit()
@@ -35,8 +40,8 @@ void Unit::idle(float deltaTime)
 
 void Unit::walk(float deltaTime, bool isGoingRight)
 {
-    if (deltaTime > 1)
-        return;
+//    if (deltaTime > 1)
+//        return;
     sf::Vector2f movement(0,0);
     if(isGoingRight)
     {
@@ -57,12 +62,12 @@ void Unit::walk(float deltaTime, bool isGoingRight)
 
 void Unit::draw(sf::RenderWindow& window, float deltaTime)
 {
+    coords.setPosition(getBody().getPosition().x, getBody().getPosition().y - 100);
+    coords.setString(std::to_string(getBody().getPosition().x) + ' ' + std::to_string(getBody().getPosition().y));
     animation.Update(static_cast<unsigned int>(state) % 9, deltaTime, isFaceRight);
     setTextureRect(animation.getUVRect());
+    window.draw(coords);
     drawBody(window);
-    info.setPosition(getTopCoordinates());
-    if (state != UnitState::dead)
-        window.draw(info);
 }
 
 void Unit::setIsFaceRight(bool isFaceRight)
@@ -74,14 +79,6 @@ bool Unit::getIsFaceRight() {
     return isFaceRight;
 }
 
-void Unit::takeDamage(sf::Vector2f blowImpulse, unsigned int damage)
-{
-    health -= damage;
-    addVectorToMomentum(blowImpulse);
-    info.setString(std::to_string(health));
-    if (health < 0)
-        state = UnitState::dead;
-}
 
 UnitState Unit::getState() {
     return state;
@@ -98,24 +95,69 @@ bool Unit::getIsOutOfBounds() {
     return isOutOfBounds;
 }
 
-void Unit::jumpForward()
+void Unit::jumpForward(float deltaTime)
 {
+    if (state == UnitState::walking)
+        idle(0.1);
     sf::Vector2f movement;
     if (isFaceRight)
-        movement = sf::Vector2f(12, -6);
+        movement = sf::Vector2f(1200.f, -600.f) * deltaTime;
     else
-        movement = sf::Vector2f(-12, -6);
+        movement = sf::Vector2f(-1200.f, -600.f) * deltaTime;
     addVectorToMomentum(movement);
 }
 
-void Unit::jumpBackwards()
+void Unit::jumpBackwards(float deltaTime)
 {
+    if (state == UnitState::walking)
+        idle(deltaTime);
     sf::Vector2f movement;
     if (isFaceRight)
-        movement = sf::Vector2f(-6, -12);
+        movement = sf::Vector2f(-600.f, -1200.f) * deltaTime;
     else
-        movement = sf::Vector2f(6, -12);
+        movement = sf::Vector2f(600.f, -1200.f) * deltaTime;
     addVectorToMomentum(movement);
+}
+
+sf::Vector2f Unit::open()
+{
+    return getPosition();
+}
+
+bool Unit::getHasKey() {
+    return hasKey;
+}
+
+bool Unit::giveKey() {
+    hasKey = true;
+}
+
+void Unit::goToChest()
+{
+    isGoingToChest = true;
+}
+
+void Unit::goToDoor()
+{
+    isGoingToDoor = true;
+}
+
+void Unit::stopGoingToChest()
+{
+    isGoingToChest = false;
+}
+
+void Unit::stopGoingToDoor()
+{
+    isGoingToDoor = false;
+}
+
+bool Unit::getGoingToChest() {
+    return isGoingToChest;
+}
+
+bool Unit::getGoingToDoor() {
+    return isGoingToDoor;
 }
 
 

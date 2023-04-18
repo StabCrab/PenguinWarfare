@@ -32,6 +32,8 @@ void Terrain::setPixel(int x, int y)
 
 void Terrain::setTexture(std::string filename)
 {
+
+
     image.loadFromFile(filename);
     texture.loadFromImage(image);
     sprite.setTexture(texture);
